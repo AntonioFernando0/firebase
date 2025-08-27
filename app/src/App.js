@@ -1,130 +1,149 @@
+// Importa o useState do React para manipular estados (variáveis reativas dentro do componente)
 import { useState } from "react";
-import { db } from "./firebaseconection"; 
-import {doc,collection, addDoc, setDoc, getDoc, getDocs} from 'firebase/firestore'
 
+// Importa a conexão do Firebase (sua configuração está em firebaseconection.js)
+import { db } from "./firebaseconection"; 
+
+// Importa funções da biblioteca Firestore que permitem criar, buscar e atualizar dados
+import { doc, collection, addDoc, setDoc, getDoc, getDocs, updateDoc } from 'firebase/firestore'
+
+// Importa o CSS do componente
 import './app.css'
 
 
-
 function App() {
-  
+  // Estados do React para controlar os valores dos inputs e lista de posts
   const [titulo, setTitulo] = useState('');
   const [autor, setAutor] = useState('');
-  const [post, setPosts] = useState([]);
+  const [post, setPosts] = useState([]); // Guarda a lista de posts vindos do banco
+  const [idpost, setIdpost] = useState(''); // Guarda o ID do post que será atualizado
 
 
-
-
-// ESSA AQUI É UMA FORMA DE FAZER, PORÉM SEMPRE FICA SOBREESCREVENDO UM ARQUIVO OU DADOS.  
-// async function handleAdd(){
-//    await setDoc(doc(db, "posts", "123"),{
-//      titulo: titulo,
-//      autor:autor
-//    }).then(()=>{
-
-//      console.log("DADOS REGISTRADOS NO BANCO!")
-
- //   }).catch((error)=>{
- //     console.log("GEROU ERRO" + error)
- //   })
- // }
-
-
- async function handleAdd(){
-  await addDoc(collection(db, "posts"), {
-    titulo: titulo,
-    autor:autor,
-  }).then(( )=> {
-    console.log("DADOS REGISTRADOS NO BANCO!")
-    setAutor('')
-    setTitulo('')  
-    
-
-  })
-      .catch(( error)=> {
-      console.log("GEROU ERRO" + error)
-  })
+  // ---------------------------------------------------------------------------
+  // INSERIR UM NOVO POST NO BANCO DE DADOS
+  // ---------------------------------------------------------------------------
+  async function handleAdd(){
+    // addDoc cria um documento automático dentro da coleção "posts"
+    await addDoc(collection(db, "posts"), {
+      titulo: titulo,
+      autor: autor,
+    })
+    .then(() => {
+      console.log("DADOS REGISTRADOS NO BANCO!");
+      // Limpa os inputs após salvar
+      setAutor('');
+      setTitulo('');  
+    })
+    .catch((error)=> {
+      console.log("GEROU ERRO: " + error)
+    })
   };
 
-  // ESSA É UMA FORMA DE BUSCAR O ITEM NO BANCO DE DADOS
-  /* async function buscarPost(){
+  
+  // ---------------------------------------------------------------------------
+  // BUSCAR POSTS NO BANCO DE DADOS
+  // ---------------------------------------------------------------------------
+  async function buscarPost(){
+    // "collection" pega a referência da coleção "posts"
+    const posRef = collection(db, "posts")
 
-    const posRef = doc(db, "posts", "123")
-
-    await getDoc(posRef)
+    await getDocs(posRef) // busca todos os documentos dentro da coleção
     .then((snapshot)=>{
-      setAutor(snapshot.data().autor);
-      setTitulo(snapshot.data().titulo);
-    }).catch((error) => {
-       console.log("GEROU ERRO" + error)
-    })
-  } */
-
-
-    async function buscarPost(){;
-      const posRef = collection(db, "posts")
-      await getDocs(posRef)
-      .then((snapshot)=>{
-
-          let lista = [];
-          
-          snapshot.forEach((doc)=>{
-            lista.push({
-              id: doc.id,
-              titulo: doc.data().titulo,
-              autor: doc.data().autor,
-
-            })
+        let lista = [];
+        
+        // percorre cada documento retornado do Firestore
+        snapshot.forEach((doc)=>{
+          lista.push({
+            id: doc.id, // ID gerado automaticamente pelo Firebase
+            titulo: doc.data().titulo,
+            autor: doc.data().autor,
           })
+        })
 
-          setPosts(lista);
-      }).catch((error)=>
-      alert("ERRO"))
-    }
- return (
+        setPosts(lista); // atualiza o estado "post" com a lista de dados
+    })
+    .catch((error)=> alert("ERRO AO BUSCAR POSTS"))
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // EDITAR UM POST EXISTENTE
+  // ---------------------------------------------------------------------------
+  async function editarPost(){
+    // Pega a referência de um documento específico pelo ID digitado
+    const docRef = doc(db, "posts", idpost)
+
+    await updateDoc(docRef, {
+      titulo: titulo,
+      autor: autor
+    })
+    .then(() =>{
+      console.log("Atualização concluída!");
+      setAutor('')
+      setTitulo('')  
+    })
+    .catch((error)=>{
+      alert("ERRO AO ATUALIZAR O POST!")
+    });
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // PARTE VISUAL (JSX)
+  // ---------------------------------------------------------------------------
+  return (
    <div>
       <h1>ReactJS + Firebase :) </h1>
 
-
-
       <div className="container">
+
+        {/* Input para digitar o ID de um post existente (usado para atualizar) */}
+        <label> ID do post</label>
+        <input
+          placeholder="Digite o ID do post"
+          value={idpost}
+          onChange={(e)=> setIdpost(e.target.value)}
+        />
+
+        <br/> <br/>
+
+        {/* Textarea para digitar o título do post */}
         <label> Título </label>
+        <textarea
+          type="text"
+          placeholder="Digite o titulo"
+          value={titulo}
+          onChange={(e)=> setTitulo(e.target.value)}
+        />
 
-          <textarea
-            type="text"
-            placeholder="Digite o titulo"
-            value={titulo}
-            onChange={(e)=> setTitulo(e.target.value)}
-
-          />
-        
-
+        {/* Input para digitar o autor do post */}
         <label> Autor </label>
+        <input
+          type="text"
+          placeholder="Autor do post"
+          value={autor}
+          onChange={(e) => setAutor(e.target.value)}
+        />
 
-          <input
-            type="text"
-            placeholder="Autor do post"
-            value={autor}
-            onChange={(e) => setAutor(e.target.value)}
-          />
-        
+        {/* Botões para cadastrar, buscar e atualizar posts */}
+        <button onClick={handleAdd}>Cadastrar</button>
+        <br/>
+        <button onClick={buscarPost}>Buscar post</button>
+        <br/>
+        <button onClick={editarPost}>Atualizar post</button>
 
-        <button onClick={handleAdd} >Cadastrar</button>
-         <button onClick={buscarPost}>
-          Buscar post
-         </button>
-         <ul>
+        {/* Lista de posts retornados do Firestore */}
+        <ul>
           {post.map((post)=> {
             return(
               <li key={post.id}>
+                <span>Id: {post.id}</span> <br/>
                 <span>Titulo: {post.titulo}</span> <br/>
-                <span>Autor: {post.autor}</span>  <br/> <br/>
+                <span>Autor: {post.autor}</span> <br/> <br/>
               </li>
             )
-          }
-          
-          )}
-         </ul>
+          })}
+        </ul>
       </div>
    </div>
   );
