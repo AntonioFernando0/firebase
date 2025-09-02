@@ -4,6 +4,10 @@ import { initializeApp } from 'firebase/app';
 // Importa a função para acessar o Firestore, o banco de dados em tempo real do Firebase
 import { getFirestore } from 'firebase/firestore';
 
+// Importa a função para acessar a autenticação do Firebase
+
+import {getAuth} from 'firebase/auth'
+
 // Configurações do Firebase, que incluem informações do seu projeto
 const firebaseConfig = {
   apiKey: "AIzaSyB0zlm0dUGfVpV1NYYA8cRjeKS0qR4qonQ", // Chave da API para autenticação
@@ -15,11 +19,14 @@ const firebaseConfig = {
   measurementId: "G-DD6FW52SW1" // ID de medição para análises
 };
 
-// Inicializa o aplicativo Firebase com a configuração fornecida
+// Inicializando o aplicativo Firebase com a configuração fornecida
 const firebaseApp = initializeApp(firebaseConfig);
 
-// Cria uma instância do Firestore utilizando o aplicativo Firebase inicializado
+// Criando uma instância do Firestore utilizando o aplicativo Firebase inicializado
 const db = getFirestore(firebaseApp);
 
-// Exporta a instância do Firestore para ser utilizada em outras partes da aplicação
-export { db };
+// Criando uma instância do Firestore utilizando o aplicativo do Firebase inicalizado
+const auth = getAuth(firebaseApp)
+
+// Exportando a instância do Firestore para ser utilizada em outras partes da aplicação
+export { db, auth };

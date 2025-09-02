@@ -1,12 +1,15 @@
 // Importa o useState do React para manipular estados (variáveis reativas dentro do componente)
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Importa a conexão do Firebase (sua configuração está em firebaseconection.js)
-import { db } from "./firebaseconection"; 
+import { db, auth } from "./firebaseconection"; 
 
 // Importa funções da biblioteca Firestore que permitem criar, buscar e atualizar dados
-import { doc, collection, addDoc, setDoc, getDoc, getDocs, updateDoc } from 'firebase/firestore'
+import { doc, collection, addDoc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
 
+// Importa as funções utilizada na autenticação do auth
+
+import {createUserWithEmailAndPassword} from 'firebase/auth'
 // Importa o CSS do componente
 import './app.css'
 
@@ -17,6 +20,45 @@ function App() {
   const [autor, setAutor] = useState('');
   const [post, setPosts] = useState([]); // Guarda a lista de posts vindos do banco
   const [idpost, setIdpost] = useState(''); // Guarda o ID do post que será atualizado
+  const  [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+
+
+
+
+  // ---------------------------------------------------------------------------
+  // UTLIZANDO O useEffect PARA UTLIZAMOS O REALTIME, ATUALIZAR SEMPRE QUE NÓS ALTERAMOS ALGUMA COISA.
+  // ---------------------------------------------------------------------------
+  useEffect(()=>{
+
+    async function loadPost() {
+    const  unsub = onSnapshot(collection(db, "posts"), (snapshot) =>{
+      
+     let listaPost = [];
+        
+        // percorre cada documento retornado do Firestore
+        snapshot.forEach((doc)=>{
+          listaPost.push({
+            id: doc.id, // ID gerado automaticamente pelo Firebase
+            titulo: doc.data().titulo,
+            autor: doc.data().autor,
+          })
+        })
+
+        setPosts(listaPost) // atualiza o estado "post" com a lista de dados
+    })
+
+      
+    
+
+    }
+        
+
+    loadPost();
+
+
+
+  }, []);
 
 
   // ---------------------------------------------------------------------------
@@ -87,6 +129,36 @@ function App() {
     });
   }
 
+ // ---------------------------------------------------------------------------
+  // EXCLUIR UM POST EXISTENTE
+  // ---------------------------------------------------------------------------
+
+  async function excluirPost(id) {
+    const docRef = doc(db, "posts", id)
+    await deleteDoc(docRef)
+    
+    .then(() =>{
+      alert("Item excluído com sucesso!")
+    }).catch((error)=>{
+      alert("ERRO AO DELETAR O POST!")
+    })
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // FUNÇÃO PARA CADASTRAR UM NOVO USÚARIO
+  // ---------------------------------------------------------------------------
+     async function novoUsuario(){
+      await createUserWithEmailAndPassword(auth, email, senha)
+      .then(() => {
+        alert("Usúario cadastrado com sucesso!")
+        setEmail('')
+        setSenha('')
+      }).catch((error)=>{
+        alert("Erro, tente novamente!")
+      })
+     };  
+
 
   // ---------------------------------------------------------------------------
   // PARTE VISUAL (JSX)
@@ -94,6 +166,32 @@ function App() {
   return (
    <div>
       <h1>ReactJS + Firebase :) </h1>
+
+
+        <h2>Usúarios</h2>
+
+      <div className="container">
+
+        <label>Email</label>
+        <input
+          value = {email}
+          onChange =  {(e)=> setEmail(e.target.value)}  
+          placeholder="Digite um email"
+        />
+
+
+        <label>Senha</label>
+        <input
+          value = {senha}
+          onChange =  {(e)=> setSenha(e.target.value)}  
+          placeholder="Digite uma senha"
+        />
+        <button onClick={novoUsuario}>Cadastrar</button>
+
+      </div>
+
+      <br/> <br/>
+      <hr/>
 
       <div className="container">
 
@@ -139,7 +237,8 @@ function App() {
               <li key={post.id}>
                 <span>Id: {post.id}</span> <br/>
                 <span>Titulo: {post.titulo}</span> <br/>
-                <span>Autor: {post.autor}</span> <br/> <br/>
+                <span>Autor: {post.autor}</span> <br/> 
+                <button onClick={() => excluirPost(post.id)}> Excluir</button> 
               </li>
             )
           })}
