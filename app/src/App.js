@@ -9,7 +9,7 @@ import { doc, collection, addDoc, setDoc, getDoc, getDocs, updateDoc, deleteDoc,
 
 // Importa as funções utilizada na autenticação do auth
 
-import {createUserWithEmailAndPassword} from 'firebase/auth'
+import {createUserWithEmailAndPassword, signInWithEmailAndPassword} from 'firebase/auth'
 // Importa o CSS do componente
 import './app.css'
 
@@ -22,6 +22,8 @@ function App() {
   const [idpost, setIdpost] = useState(''); // Guarda o ID do post que será atualizado
   const  [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [user, setUser] = useState(false);
+  const [userDetail, setUserDetail] = useState({})
 
 
 
@@ -48,12 +50,9 @@ function App() {
         setPosts(listaPost) // atualiza o estado "post" com a lista de dados
     })
 
-      
-    
 
     }
         
-
     loadPost();
 
 
@@ -155,17 +154,64 @@ function App() {
         setEmail('')
         setSenha('')
       }).catch((error)=>{
-        alert("Erro, tente novamente!")
+        if(error.code === 'auth/weak-password'){
+          alert("Senha muito fraca.")
+        }else if(error.code === 'auth/email-already-in-use'){
+          alert("Email já existe!")
+        }
       })
      };  
 
 
+
+  // ---------------------------------------------------------------------------
+  // FUNÇÃO PARA LOGAR UM USÚARIO
+  // ---------------------------------------------------------------------------
+     async function logarUsuario() {
+      await signInWithEmailAndPassword(auth,email, senha)
+      .then((value) =>{
+        alert("Login Realizado")
+        console.log(value.user)
+        setUserDetail({
+          uid: value.user.uid,
+          email: value.user.email,
+        })
+        setUser(true)
+
+
+
+        setEmail('')
+        setSenha('')
+      }).catch((error)=> {
+        alert("Não foi possível realizar o login")
+      })
+      }
+      
+      
+      
+
   // ---------------------------------------------------------------------------
   // PARTE VISUAL (JSX)
   // ---------------------------------------------------------------------------
-  return (
+  
+return (
+
+
+  
    <div>
-      <h1>ReactJS + Firebase :) </h1>
+      <h1>ReactJS + Firebase  </h1>
+
+
+      {user && (
+        <div> 
+
+          <strong>Seja bem-vindo(a) (você está logado!)</strong>
+          <span>ID: {userDetail.uid} - Email: {userDetail.email}</span>
+
+          <br/>
+          <br/>
+        </div>  
+      )}
 
 
         <h2>Usúarios</h2>
@@ -187,6 +233,7 @@ function App() {
           placeholder="Digite uma senha"
         />
         <button onClick={novoUsuario}>Cadastrar</button>
+        <button onClick={logarUsuario}>Fazer Login</button>
 
       </div>
 
@@ -245,7 +292,7 @@ function App() {
         </ul>
       </div>
    </div>
-  );
-}
+);
+} 
 
 export default App;
